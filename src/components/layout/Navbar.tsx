@@ -7,30 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Menu as MenuIcon, User as UserIconFallback } from 'lucide-react'; // Renamed User to UserIconFallback
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { createClient as createSupabaseServerClient} from '@/lib/supabase/server'; // Renamed to avoid conflict in AuthStatus
+import { createClient as createSupabaseServerClient} from '@/lib/supabase/server'; 
 import { UserNav } from './UserNav';
 import { Suspense } from 'react';
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
-import { createClient as createSupabaseClient } from '@/lib/supabase/client'; // For client-side role fetch
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'; 
+import * as React from 'react'; // Import React
 
 // This AuthStatus component will run on the server to get the initial auth user
-// For client-side updates or fetching public.users.role, UserNav or a new client component will handle it
 async function AuthStatus() {
-  const supabase = createSupabaseServerClient(); // Server client for initial auth check
+  const supabase = createSupabaseServerClient(); 
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
   if (authUser) {
-    // For UserNav, we need to pass the role from public.users
-    // This requires an async operation, best handled inside a client component
-    // if we want to fetch it dynamically for the main navbar.
-    // Or, for admin layout, it's passed directly.
-    // Here, we'll pass the authUser and let UserNav (or a wrapper) fetch the public role if needed.
-    // For now, UserNav will just get passedRole from AdminLayout.
-    // A more advanced solution for Navbar would be a dedicated Client Component for AuthStatus
-    // that fetches the public.users.role on the client.
-
-    // For UserNav to show admin link correctly in main navbar, it needs the role.
-    // Let's create a small client component wrapper for UserNav here to fetch the role.
     return <UserNavWithRoleFetcher authUser={authUser} />;
   }
 
