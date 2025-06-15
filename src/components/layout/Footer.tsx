@@ -1,8 +1,17 @@
+"use client";
+
 import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
+  const [dynamicYear, setDynamicYear] = useState<number | string>("..."); // Placeholder for the year
+
+  useEffect(() => {
+    setDynamicYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12" style={{ '--footer-height': 'auto' } as React.CSSProperties}>
       <div className="container max-w-screen-2xl">
@@ -45,7 +54,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-          <p>&copy; {new Date().getFullYear()} Zanzibar Free Tours. All rights reserved.</p>
+          <p>&copy; {dynamicYear} Zanzibar Free Tours. All rights reserved.</p>
         </div>
       </div>
     </footer>
