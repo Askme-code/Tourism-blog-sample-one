@@ -21,26 +21,30 @@ export default function Footer() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true); // Set isMounted to true after initial client render
-
-    setDynamicYear(new Date().getFullYear());
-
-    const checkAdminStatus = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const appUser = user as AppUser;
-        if (appUser.user_metadata?.role === 'admin') {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false); // Explicitly set to false if not admin
-        }
-      } else {
-        setIsAdmin(false); // Explicitly set to false if no user
-      }
-    };
-    checkAdminStatus();
+    setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      setDynamicYear(new Date().getFullYear());
+
+      const checkAdminStatus = async () => {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const appUser = user as AppUser;
+          if (appUser.user_metadata?.role === 'admin') {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } else {
+          setIsAdmin(false);
+        }
+      };
+      checkAdminStatus();
+    }
+  }, [isMounted]);
 
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
