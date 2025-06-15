@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import React from "react"; // Keep React import for potential future use if directly using its types
 
 const emailSchema = z.string().email({ message: "Invalid email address." });
 const passwordSchema = z
@@ -60,8 +59,6 @@ export async function signUpAction(prevState: any, formData: FormData) {
   }
 
   // If signup is successful and user object is available, create entry in public.users
-  // This step is CRUCIAL if you don't have a DB trigger.
-  // The DDL for public.users has role DEFAULT 'user'
   if (authData.user) {
     const { error: publicUserError } = await supabase
       .from('users')
@@ -69,8 +66,8 @@ export async function signUpAction(prevState: any, formData: FormData) {
         id: authData.user.id, // Link to auth.users.id
         email: email,
         full_name: fullName,
+        password_hash: "managed_by_supabase_auth", // Placeholder for NOT NULL constraint
         // phone can be added later or via profile update
-        // password_hash is managed by Supabase Auth, not directly inserted here
         // role will default to 'user' as per table definition
       });
 
@@ -81,7 +78,7 @@ export async function signUpAction(prevState: any, formData: FormData) {
       // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges for supabase client
       return {
         error: true,
-        message: "Account created but profile setup failed. Please contact support.",
+        message: `Account created but profile setup failed: ${publicUserError.message}. Please contact support.`,
       };
     }
   } else {
