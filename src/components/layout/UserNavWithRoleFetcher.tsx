@@ -15,26 +15,26 @@ export default function UserNavWithRoleFetcher({ authUser }: { authUser: Supabas
   React.useEffect(() => {
     async function fetchRole() {
       if (authUser) {
-        setIsLoadingRole(true); // Ensure loading state is true at the start of fetch
+        setIsLoadingRole(true);
         const supabase = createSupabaseClient();
+        // Use .maybeSingle() to gracefully handle cases where no row is found
         const { data: userProfile, error } = await supabase
           .from('users')
           .select('role')
           .eq('id', authUser.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
-          // Log the error but don't crash. Assume non-admin if profile/role is missing.
+          // This error now primarily means multiple rows returned or a DB connection issue.
           console.error("UserNavWithRoleFetcher: Error fetching user role:", error.message);
-          // Specifically handle "multiple (or no) rows returned" by setting role to undefined or a default
-          if (error.code === 'PGRST116') { // PGRST116 is the code for "0 rows" or "multiple rows" for .single()
-            setRole(undefined); // Or 'user' if you want a default non-admin role
-          }
-        } else if (userProfile) {
-          setRole(userProfile.role);
+          setRole(undefined); // Fallback to no specific role on error
+        } else if (!userProfile) {
+          // No profile found for the user in public.users table
+          console.warn(`UserNavWithRoleFetcher: No profile/role found in public.users for user ID: ${authUser.id}. Assuming default non-admin role.`);
+          setRole(undefined); // Fallback to no specific role
         } else {
-          // Profile not found, but no explicit error (should be caught by error.code === 'PGRST116')
-          setRole(undefined); 
+          // Profile found, set the role
+          setRole(userProfile.role);
         }
         setIsLoadingRole(false);
       } else {
@@ -54,3 +54,4 @@ export default function UserNavWithRoleFetcher({ authUser }: { authUser: Supabas
 
   return <UserNav user={typedUser} passedRole={role} />;
 }
+
