@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -34,13 +35,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Suspense fallback={<div>Loading navigation...</div>}>
-            <Navbar />
-          </Suspense>
-          <main className="min-h-[calc(100vh-var(--navbar-height,4rem)-var(--footer-height,4rem))]">
-            {children}
-          </main>
-          <Footer />
+          <div className="flex flex-col min-h-screen">
+            <Suspense fallback={<div>Loading navigation...</div>}>
+              <Navbar />
+            </Suspense>
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>
