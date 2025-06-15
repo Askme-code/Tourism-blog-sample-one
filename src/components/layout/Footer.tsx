@@ -51,47 +51,10 @@ export default function Footer() {
     }
   }, [isMounted]);
 
-  if (!isMounted) {
-    // Skeleton rendered on the server and initial client render
-    return (
-        <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
-            <div className="container max-w-screen-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div>
-                        <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
-                        <div className="mt-2 h-4 w-full bg-muted rounded animate-pulse"></div>
-                        <div className="mt-4 flex space-x-3">
-                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
-                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
-                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div className="h-6 w-24 bg-muted rounded mb-3 animate-pulse"></div>
-                        <ul className="space-y-2 text-sm">
-                            {[...Array(4)].map((_, i) => <li key={`skel-link-${i}`} className="h-4 w-3/4 bg-muted rounded animate-pulse"></li>)}
-                        </ul>
-                    </div>
-                    <div>
-                        <div className="h-6 w-32 bg-muted rounded mb-3 animate-pulse"></div>
-                         <div className="space-y-1 text-sm">
-                            <div className="h-4 w-full bg-muted rounded animate-pulse"></div>
-                            <div className="h-4 w-5/6 bg-muted rounded animate-pulse"></div>
-                            <div className="h-4 w-4/5 bg-muted rounded animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-                    <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
-                </div>
-            </div>
-        </footer>
-    ); 
-  }
-
-  // Actual footer content rendered after mount
-  return (
-    <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
+  // This function generates the actual content, used by both skeleton (for structure) and final render.
+  // When called for the skeleton, isAdmin will be false and displayYear null.
+  const ActualFooterContent = ({ currentIsAdmin, currentDisplayYear }: { currentIsAdmin: boolean; currentDisplayYear: number | null }) => (
+    <>
       <div className="container max-w-screen-2xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -119,7 +82,7 @@ export default function Footer() {
               <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ (Coming Soon)</Link></li>
-              {isAdmin && (
+              {currentIsAdmin && (
                 <li>
                   <Link href="/admin" className="flex items-center hover:text-primary transition-colors">
                     <LayoutDashboard size={16} className="mr-1.5" /> Admin Panel
@@ -139,13 +102,31 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-          {displayYear ? (
-            <p>&copy; {displayYear} Zanzibar Free Tours. All rights reserved.</p>
+          {currentDisplayYear ? (
+            <p>&copy; {currentDisplayYear} Zanzibar Free Tours. All rights reserved.</p>
           ) : (
-            <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
+            // Placeholder for copyright text when year is not yet available
+            <p className="h-4 w-1/3 bg-muted rounded mx-auto">&nbsp;</p> 
           )}
         </div>
       </div>
+    </>
+  );
+
+
+  if (!isMounted) {
+    // Server-side and initial client-side render (skeleton based on initial state)
+    return (
+        <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
+            <ActualFooterContent currentIsAdmin={false} currentDisplayYear={null} />
+        </footer>
+    );
+  }
+
+  // Client-side render after mount and state updates
+  return (
+    <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
+      <ActualFooterContent currentIsAdmin={isAdmin} currentDisplayYear={displayYear} />
     </footer>
   );
 }
