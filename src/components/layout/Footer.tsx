@@ -6,15 +6,15 @@ import Logo from '@/components/icons/Logo';
 import { Facebook, Instagram, Twitter, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 
 export default function Footer() {
   const [isMounted, setIsMounted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const currentYear = new Date().getFullYear();
+  const [displayYear, setDisplayYear] = useState<number | null>(null);
 
   useEffect(() => {
-    setIsMounted(true); 
+    setIsMounted(true);
+    setDisplayYear(new Date().getFullYear());
 
     const checkAdminStatus = async () => {
       const supabase = createClient();
@@ -24,16 +24,20 @@ export default function Footer() {
           .from('users')
           .select('role')
           .eq('id', authUser.id)
-          .single(); // .single() is okay here if we expect a profile to always exist post-signup logic
+          .maybeSingle();
         
-        if (!error && userProfile && userProfile.role === 'admin') {
-          setIsAdmin(true);
-        } else {
+        if (error) {
+          if (error.message === "JSON object requested, multiple (or no) rows returned") {
+            console.warn(`Footer: No profile/role found for user ${authUser.id} (reported as: ${error.message}). Assuming non-admin.`);
+          } else {
+            console.error("Footer: Error fetching user role:", error.message);
+          }
           setIsAdmin(false);
-          // Log if there's an error or profile isn't found, for debugging.
-          // The "no rows" error from .single() would be caught here.
-          if (error) console.warn("Footer: Error or no profile found fetching user role:", error.message);
-          else if (!userProfile) console.warn("Footer: No profile found for user:", authUser.id);
+        } else if (!userProfile) {
+          console.warn(`Footer: No profile found in public.users for user ${authUser.id}. Assuming non-admin.`);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(userProfile.role === 'admin');
         }
       } else {
         setIsAdmin(false);
@@ -43,7 +47,7 @@ export default function Footer() {
   }, []);
 
   if (!isMounted) {
-    // Avoid rendering different content on server and client initial render
+    // Skeleton rendered on the server and initial client render
     return (
         <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
             <div className="container max-w-screen-2xl">
@@ -73,13 +77,15 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-                    <div className="h-3 w-1/3 bg-muted rounded mx-auto"></div>
+                    {/* Consistent <p> tag for copyright placeholder */}
+                    <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
                 </div>
             </div>
         </footer>
     ); 
   }
 
+  // Actual footer content rendered after mount
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
       <div className="container max-w-screen-2xl">
@@ -129,7 +135,12 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-          <p>&copy; {currentYear} Zanzibar Free Tours. All rights reserved.</p>
+          {displayYear ? (
+            <p>&copy; {displayYear} Zanzibar Free Tours. All rights reserved.</p>
+          ) : (
+            // Fallback placeholder matching the skeleton's copyright line structure
+            <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
+          )}
         </div>
       </div>
     </footer>
