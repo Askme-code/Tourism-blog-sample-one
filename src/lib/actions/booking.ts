@@ -11,15 +11,17 @@ const BookingSchema = z.object({
   tour_date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Please select a valid date." }),
   number_of_people: z.coerce.number().int().min(1, { message: "Number of people must be at least 1." }),
   notes: z.string().max(500, { message: "Notes cannot exceed 500 characters." }).optional(),
+  pathname: z.string().optional(), // Added for redirect flexibility
 });
 
 export async function submitBookingAction(prevState: any, formData: FormData) {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
+  const pathname = formData.get('pathname') as string || '/';
+
   if (!user) {
-    // This should ideally be caught by middleware, but as a safeguard:
-    return redirect('/auth/login?message=Please log in to book a tour.&redirect_to=' + formData.get('pathname'));
+    return redirect(`/auth/login?message=Please log in to book a tour.&redirect_to=${pathname}`);
   }
 
   const validatedFields = BookingSchema.safeParse({
@@ -55,17 +57,18 @@ export async function submitBookingAction(prevState: any, formData: FormData) {
     };
   }
 
-  const totalPrice = tourData.price ? tourData.price * number_of_people : null;
+  const totalPrice = tourData.price ? Number(tourData.price) * number_of_people : null;
+  const formattedTourDate = new Date(tour_date).toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
   const { error: bookingError } = await supabase.from('bookings').insert({
     user_id: user.id,
     tour_id: tourId,
-    tour_date: new Date(tour_date).toISOString(),
+    tour_date: formattedTourDate, // Use YYYY-MM-DD formatted date
     number_of_people: number_of_people,
     status: 'pending', // Default status
     total_price: totalPrice,
-    notes: notes || null, // Ensure notes is null if empty string or undefined
-    booking_date: new Date().toISOString(), 
+    notes: notes || null,
+    booking_date: new Date().toISOString(),
   });
 
   if (bookingError) {
@@ -79,5 +82,6 @@ export async function submitBookingAction(prevState: any, formData: FormData) {
 
   revalidatePath('/bookings');
   revalidatePath(`/tours/${tourId}`);
-  redirect('/bookings?message=Booking request for ' + tourData.name + ' submitted successfully! We will confirm shortly.');
+  redirect(`/bookings?message=Booking request for "${tourData.name}" submitted successfully! We will confirm shortly.`);
 }
+

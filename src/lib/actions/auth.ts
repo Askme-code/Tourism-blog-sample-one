@@ -1,9 +1,11 @@
+
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import React from "react"; // Keep React import for potential future use if directly using its types
 
 const emailSchema = z.string().email({ message: "Invalid email address." });
 const passwordSchema = z
@@ -37,25 +39,59 @@ export async function signUpAction(prevState: any, formData: FormData) {
 
   const { email, password, fullName } = result.data;
 
-  const { error } = await supabase.auth.signUp({
+  // Sign up the user in auth.users
+  const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
-      data: {
+      data: { // This goes into auth.users.user_metadata and raw_user_meta_data
         full_name: fullName,
-        // Role is 'user' by default as per DB schema
       },
     },
   });
 
-  if (error) {
-    console.error("Sign up error:", error);
+  if (signUpError) {
+    console.error("Sign up error:", signUpError);
     return {
       error: true,
-      message: error.message || "Could not authenticate user.",
+      message: signUpError.message || "Could not authenticate user.",
     };
   }
+
+  // If signup is successful and user object is available, create entry in public.users
+  // This step is CRUCIAL if you don't have a DB trigger.
+  // The DDL for public.users has role DEFAULT 'user'
+  if (authData.user) {
+    const { error: publicUserError } = await supabase
+      .from('users')
+      .insert({
+        id: authData.user.id, // Link to auth.users.id
+        email: email,
+        full_name: fullName,
+        // phone can be added later or via profile update
+        // password_hash is managed by Supabase Auth, not directly inserted here
+        // role will default to 'user' as per table definition
+      });
+
+    if (publicUserError) {
+      console.error("Error creating public user profile:", publicUserError);
+      // Potentially delete the auth.user if public.user creation fails to keep things consistent?
+      // For now, just log error and inform user. This state is problematic.
+      // await supabase.auth.admin.deleteUser(authData.user.id) // Requires admin privileges for supabase client
+      return {
+        error: true,
+        message: "Account created but profile setup failed. Please contact support.",
+      };
+    }
+  } else {
+    // This case should ideally not happen if signUpError is null, but as a safeguard.
+     return {
+        error: true,
+        message: "Account created but user data is unavailable for profile setup. Please try logging in or contact support.",
+      };
+  }
+
 
   return {
     error: false,

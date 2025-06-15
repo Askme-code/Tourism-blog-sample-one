@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -14,29 +15,38 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, LayoutDashboard, Briefcase } from "lucide-react";
 import { signOutAction } from '@/lib/actions/auth';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 
+// This interface now expects a 'passedRole' which comes from public.users
+// It also expects 'user_metadata' which is standard on SupabaseAuthUser
 interface UserNavProps {
-  user: SupabaseUser & { user_metadata: { full_name?: string, avatar_url?: string, role?: string }};
+  user: SupabaseAuthUser & { 
+    user_metadata: { 
+      full_name?: string, 
+      avatar_url?: string 
+      // The 'role' in user_metadata is now considered secondary or for display only
+      // if it happens to be set there. 'passedRole' is authoritative.
+    }
+  };
+  passedRole?: string; // This is the role from public.users table
 }
 
-export function UserNav({ user }: UserNavProps) {
-  const initials = user.user_metadata.full_name
-    ? user.user_metadata.full_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : user.email?.[0].toUpperCase() ?? "U";
+export function UserNav({ user, passedRole }: UserNavProps) {
+  const displayName = user.user_metadata.full_name || user.email || "User";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || "U";
 
-  const isAdmin = user.user_metadata.role === 'admin';
+  const isAdmin = passedRole === 'admin';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt={user.user_metadata.full_name ?? "User avatar"} />
+            <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt={displayName} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -45,7 +55,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.user_metadata.full_name ?? user.email}
+              {displayName}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}

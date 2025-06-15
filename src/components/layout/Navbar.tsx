@@ -1,30 +1,37 @@
+
 import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import { ModeToggle } from '@/components/layout/ModeToggle';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Menu as MenuIcon, X as XIcon, User } from 'lucide-react';
+import { Search, Menu as MenuIcon, User as UserIconFallback } from 'lucide-react'; // Renamed User to UserIconFallback
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseServerClient} from '@/lib/supabase/server'; // Renamed to avoid conflict in AuthStatus
 import { UserNav } from './UserNav';
 import { Suspense } from 'react';
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'; // For client-side role fetch
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/book-tour', label: 'Book Tour' },
-];
-
+// This AuthStatus component will run on the server to get the initial auth user
+// For client-side updates or fetching public.users.role, UserNav or a new client component will handle it
 async function AuthStatus() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = createSupabaseServerClient(); // Server client for initial auth check
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-  if (user) {
-    // Augment user type to include user_metadata for role
-    const typedUser = user as typeof user & { user_metadata: { role?: string, full_name?: string, avatar_url?: string } };
-    return <UserNav user={typedUser} />;
+  if (authUser) {
+    // For UserNav, we need to pass the role from public.users
+    // This requires an async operation, best handled inside a client component
+    // if we want to fetch it dynamically for the main navbar.
+    // Or, for admin layout, it's passed directly.
+    // Here, we'll pass the authUser and let UserNav (or a wrapper) fetch the public role if needed.
+    // For now, UserNav will just get passedRole from AdminLayout.
+    // A more advanced solution for Navbar would be a dedicated Client Component for AuthStatus
+    // that fetches the public.users.role on the client.
+
+    // For UserNav to show admin link correctly in main navbar, it needs the role.
+    // Let's create a small client component wrapper for UserNav here to fetch the role.
+    return <UserNavWithRoleFetcher authUser={authUser} />;
   }
 
   return (
@@ -39,6 +46,45 @@ async function AuthStatus() {
   );
 }
 
+// New client component to fetch public.users.role for UserNav in the main navbar
+function UserNavWithRoleFetcher({ authUser }: { authUser: SupabaseAuthUser }) {
+  'use client';
+  const [role, setRole] = React.useState<string | undefined>(undefined);
+  const [isLoadingRole, setIsLoadingRole] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchRole() {
+      if (authUser) {
+        const supabase = createSupabaseClient();
+        const { data: userProfile, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+        if (!error && userProfile) {
+          setRole(userProfile.role);
+        } else if (error) {
+          console.error("Error fetching user role for UserNav:", error.message);
+        }
+        setIsLoadingRole(false);
+      } else {
+        setIsLoadingRole(false);
+      }
+    }
+    fetchRole();
+  }, [authUser]);
+
+  if (isLoadingRole) {
+    // Basic fallback while role is loading
+    return <Button variant="ghost" size="icon" className="rounded-full"><UserIconFallback className="h-5 w-5"/></Button>;
+  }
+  
+  // Type assertion for user_metadata if needed by UserNav structure
+  const typedUser = authUser as SupabaseAuthUser & { user_metadata: { full_name?: string, avatar_url?: string }};
+
+  return <UserNav user={typedUser} passedRole={role} />;
+}
+
 
 export default function Navbar() {
   return (
@@ -48,17 +94,19 @@ export default function Navbar() {
           <Logo iconSize={28} textSize="text-xl" />
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {['Home', 'About', 'Contact', 'Book Tour'].map((label) => {
+            const href = `/${label.toLowerCase().replace(' ', '-')}`;
+            return (
+              <Link
+                key={href}
+                href={href === '/home' ? '/' : href}
+                className="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
@@ -74,11 +122,10 @@ export default function Navbar() {
           
           <LanguageSwitcher />
           <ModeToggle />
-          <Suspense fallback={<Button variant="ghost" size="icon" className="rounded-full"><User className="h-5 w-5"/></Button>}>
+          <Suspense fallback={<Button variant="ghost" size="icon" className="rounded-full"><UserIconFallback className="h-5 w-5"/></Button>}>
             <AuthStatus />
           </Suspense>
 
-          {/* Mobile Navigation */}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -93,16 +140,19 @@ export default function Navbar() {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col space-y-3">
-                  {navLinks.map((link) => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
+                  {['Home', 'About', 'Contact', 'Book Tour'].map((label) => {
+                     const href = `/${label.toLowerCase().replace(' ', '-')}`;
+                    return (
+                      <SheetClose asChild key={href}>
+                        <Link
+                          href={href === '/home' ? '/' : href}
+                          className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+                        >
+                          {label}
+                        </Link>
+                      </SheetClose>
+                    );
+                  })}
                   <div className="relative mt-4">
                      <Input
                         type="search"

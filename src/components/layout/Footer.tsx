@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,14 +6,7 @@ import Logo from '@/components/icons/Logo';
 import { Facebook, Instagram, Twitter, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
-
-interface AppUser extends User {
-  user_metadata: {
-    role?: string;
-    [key: string]: any;
-  };
-}
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 
 export default function Footer() {
   const [isMounted, setIsMounted] = useState(false);
@@ -24,13 +18,19 @@ export default function Footer() {
 
     const checkAdminStatus = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const appUser = user as AppUser;
-        if (appUser.user_metadata?.role === 'admin') {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: userProfile, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (!error && userProfile && userProfile.role === 'admin') {
           setIsAdmin(true);
         } else {
           setIsAdmin(false);
+          if (error) console.error("Footer: Error fetching user role:", error.message);
         }
       } else {
         setIsAdmin(false);
@@ -40,7 +40,7 @@ export default function Footer() {
   }, []);
 
   if (!isMounted) {
-    return null; // Render nothing on the server or before hydration
+    return null; 
   }
 
   return (
@@ -71,7 +71,7 @@ export default function Footer() {
               <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
+              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ (Coming Soon)</Link></li>
               {isAdmin && (
                 <li>
                   <Link href="/admin" className="flex items-center hover:text-primary transition-colors">

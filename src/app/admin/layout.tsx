@@ -1,3 +1,4 @@
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +9,7 @@ import { ModeToggle } from "@/components/layout/ModeToggle";
 import { UserNav } from "@/components/layout/UserNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 
 const adminNavItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
@@ -20,30 +21,63 @@ const adminNavItems = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
+interface UserWithPublicRole extends SupabaseAuthUser {
+  // For data primarily from auth.users (like email, user_metadata for avatar/name)
+  user_metadata: { 
+    full_name?: string; 
+    avatar_url?: string;
+    // role from user_metadata is now secondary, public.users.role is primary
+    role?: string; 
+  };
+  // Explicitly add the role fetched from public.users
+  public_role?: string; 
+}
+
+
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return redirect("/auth/login?message=Please log in to access the admin panel.");
+  if (!authUser) {
+    return redirect("/auth/login?message=Please log in to access the admin panel.&redirect_to=/admin");
   }
 
-  const typedUser = user as SupabaseUser & { user_metadata: { role?: string, full_name?: string, avatar_url?: string } };
-  
-  // Check if user_metadata and role exist
-  if (!typedUser.user_metadata || typedUser.user_metadata.role !== 'admin') {
-     console.warn(`User ${user.id} with email ${user.email} attempted to access admin panel without admin role. Current role: ${typedUser.user_metadata?.role}`);
+  // Fetch role from public.users table
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('role, full_name, phone') // fetch full_name as well if it's primarily in public.users
+    .eq('id', authUser.id)
+    .single();
+
+  if (profileError || !userProfile) {
+    console.error(`AdminLayout: Error fetching profile for user ${authUser.id} or profile not found:`, profileError);
+    return redirect("/?error=unauthorized&message=User profile not found. Cannot verify admin status.");
+  }
+
+  if (userProfile.role !== 'admin') {
+     console.warn(`AdminLayout: User ${authUser.id} with email ${authUser.email} attempted to access admin panel. Role from public.users: ${userProfile.role}`);
      return redirect("/?error=unauthorized&message=You are not authorized to access this page.");
   }
+
+  // Construct the user object for UserNav, prioritizing data from public.users if available
+  // and falling back to authUser.user_metadata for display purposes like full_name, avatar_url
+  const displayUser: UserWithPublicRole = {
+    ...authUser,
+    user_metadata: {
+      ...authUser.user_metadata, // Keep existing user_metadata
+      full_name: userProfile.full_name || authUser.user_metadata?.full_name || authUser.email || '',
+      // avatar_url could still come from authUser.user_metadata if not in public.users
+    },
+    public_role: userProfile.role, // This is the authoritative role
+  };
 
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex h-screen w-64 flex-col border-r bg-background fixed">
         <div className="flex h-16 items-center border-b px-6">
           <Link href="/admin">
@@ -75,7 +109,6 @@ export default async function AdminLayout({
       </aside>
 
       <div className="flex flex-col flex-1 md:ml-64">
-        {/* Mobile Header & Desktop Header Content */}
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between md:justify-end">
           <div className="md:hidden">
             <Sheet>
@@ -117,10 +150,9 @@ export default async function AdminLayout({
             </Sheet>
           </div>
           
-          {/* Right side of header for desktop and mobile */}
           <div className="flex items-center gap-2">
             <ModeToggle />
-            <UserNav user={typedUser} />
+            <UserNav user={displayUser} passedRole={userProfile.role} />
           </div>
         </header>
 
