@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ export default function AboutPage() {
       <section className="relative py-20 md:py-32 bg-primary/10">
         <div className="absolute inset-0 opacity-30">
           <Image 
-            src="https://placehold.co/1600x800.png?text=Zanzibar+Team" 
+            src="https://placehold.co/1600x800.png" 
             alt="Zanzibar Free Tours Team" 
             layout="fill" 
             objectFit="cover" 
@@ -45,7 +46,7 @@ export default function AboutPage() {
             </div>
             <div className="rounded-lg overflow-hidden shadow-xl">
               <Image 
-                src="https://placehold.co/600x450.png?text=Local+Guide" 
+                src="https://placehold.co/600x450.png" 
                 alt="Local guide smiling" 
                 width={600} 
                 height={450} 
@@ -94,6 +95,25 @@ export default function AboutPage() {
           <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary font-semibold" asChild>
             <Link href="/book-tour">Book a Tour Now</Link>
           </Button>
+        </div>
+      </section>
+
+      {/* Map Section */}
+      <section className="py-12 md:py-16">
+        <div className="container">
+          <h2 className="text-3xl font-headline text-center mb-10">Find Us Here</h2>
+          <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-xl">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15867.050136807038!2d39.182714766679275!3d-6.162549151193221!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x185cd059242fbd01%3A0x9a18e54b0e5a94d8!2sStone%20Town%2C%20Zanzibar!5e0!3m2!1sen!2stz!4v1750025305683!5m2!1sen!2stz" 
+              width="100%" 
+              height="450" 
+              style={{ border:0 }} 
+              allowFullScreen={true} 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Our Location in Stone Town, Zanzibar"
+            ></iframe>
+          </div>
         </div>
       </section>
     </div>
