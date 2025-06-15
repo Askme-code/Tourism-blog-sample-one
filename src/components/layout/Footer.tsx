@@ -1,0 +1,53 @@
+import Link from 'next/link';
+import Logo from '@/components/icons/Logo';
+import { Facebook, Instagram, Twitter } from 'lucide-react';
+
+export default function Footer() {
+  return (
+    <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12" style={{ '--footer-height': 'auto' } as React.CSSProperties}>
+      <div className="container max-w-screen-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <Logo iconSize={24} textSize="text-lg" />
+            <p className="mt-2 text-sm">
+              Discover the magic of Zanzibar with our curated tours.
+            </p>
+            <div className="mt-4 flex space-x-3">
+              <Link href="#" aria-label="Facebook" className="hover:text-primary transition-colors">
+                <Facebook size={20} />
+              </Link>
+              <Link href="#" aria-label="Instagram" className="hover:text-primary transition-colors">
+                <Instagram size={20} />
+              </Link>
+              <Link href="#" aria-label="Twitter" className="hover:text-primary transition-colors">
+                <Twitter size={20} />
+              </Link>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="font-headline text-lg font-semibold text-foreground mb-3">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-headline text-lg font-semibold text-foreground mb-3">Contact Us</h3>
+            <address className="not-italic text-sm space-y-1">
+              <p>Stone Town, Zanzibar</p>
+              <p>Email: <a href="mailto:info@zanzibarfreetours.com" className="hover:text-primary transition-colors">info@zanzibarfreetours.com</a></p>
+              <p>Phone: <a href="tel:+255777123456" className="hover:text-primary transition-colors">+255 777 123 456</a></p>
+            </address>
+          </div>
+        </div>
+        <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
+          <p>&copy; {new Date().getFullYear()} Zanzibar Free Tours. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
