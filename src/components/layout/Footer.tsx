@@ -16,10 +16,13 @@ interface AppUser extends User {
 }
 
 export default function Footer() {
+  const [isMounted, setIsMounted] = useState(false);
   const [dynamicYear, setDynamicYear] = useState<number | string>("...");
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true); // Set isMounted to true after initial client render
+
     setDynamicYear(new Date().getFullYear());
 
     const checkAdminStatus = async () => {
@@ -29,7 +32,11 @@ export default function Footer() {
         const appUser = user as AppUser;
         if (appUser.user_metadata?.role === 'admin') {
           setIsAdmin(true);
+        } else {
+          setIsAdmin(false); // Explicitly set to false if not admin
         }
+      } else {
+        setIsAdmin(false); // Explicitly set to false if no user
       }
     };
     checkAdminStatus();
@@ -64,7 +71,7 @@ export default function Footer() {
               <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-              {isAdmin && (
+              {isMounted && isAdmin && (
                 <li>
                   <Link href="/admin" className="flex items-center hover:text-primary transition-colors">
                     <LayoutDashboard size={16} className="mr-1.5" /> Admin Panel
@@ -84,7 +91,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-          <p>&copy; {dynamicYear} Zanzibar Free Tours. All rights reserved.</p>
+          <p>&copy; {isMounted ? dynamicYear : "..."} Zanzibar Free Tours. All rights reserved.</p>
         </div>
       </div>
     </footer>
