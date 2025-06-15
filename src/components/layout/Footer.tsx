@@ -24,13 +24,16 @@ export default function Footer() {
           .from('users')
           .select('role')
           .eq('id', authUser.id)
-          .single();
+          .single(); // .single() is okay here if we expect a profile to always exist post-signup logic
         
         if (!error && userProfile && userProfile.role === 'admin') {
           setIsAdmin(true);
         } else {
           setIsAdmin(false);
-          if (error) console.error("Footer: Error fetching user role:", error.message);
+          // Log if there's an error or profile isn't found, for debugging.
+          // The "no rows" error from .single() would be caught here.
+          if (error) console.warn("Footer: Error or no profile found fetching user role:", error.message);
+          else if (!userProfile) console.warn("Footer: No profile found for user:", authUser.id);
         }
       } else {
         setIsAdmin(false);
@@ -40,7 +43,41 @@ export default function Footer() {
   }, []);
 
   if (!isMounted) {
-    return null; 
+    // Avoid rendering different content on server and client initial render
+    return (
+        <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
+            <div className="container max-w-screen-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
+                    <div>
+                        <div className="h-8 w-48 bg-muted rounded"></div>
+                        <div className="mt-2 h-4 w-full bg-muted rounded"></div>
+                        <div className="mt-4 flex space-x-3">
+                            <div className="h-5 w-5 bg-muted rounded-full"></div>
+                            <div className="h-5 w-5 bg-muted rounded-full"></div>
+                            <div className="h-5 w-5 bg-muted rounded-full"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="h-6 w-24 bg-muted rounded mb-3"></div>
+                        <ul className="space-y-2 text-sm">
+                            {[...Array(3)].map((_, i) => <li key={i} className="h-4 w-3/4 bg-muted rounded"></li>)}
+                        </ul>
+                    </div>
+                    <div>
+                        <div className="h-6 w-32 bg-muted rounded mb-3"></div>
+                         <div className="space-y-1 text-sm">
+                            <div className="h-4 w-full bg-muted rounded"></div>
+                            <div className="h-4 w-5/6 bg-muted rounded"></div>
+                            <div className="h-4 w-4/5 bg-muted rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
+                    <div className="h-3 w-1/3 bg-muted rounded mx-auto"></div>
+                </div>
+            </div>
+        </footer>
+    ); 
   }
 
   return (
