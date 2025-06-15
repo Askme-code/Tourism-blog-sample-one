@@ -13,7 +13,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12" style={{ '--footer-height': 'auto' } as React.CSSProperties}>
+    <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
       <div className="container max-w-screen-2xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
