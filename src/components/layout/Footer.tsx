@@ -17,12 +17,11 @@ interface AppUser extends User {
 export default function Footer() {
   const [isMounted, setIsMounted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const currentYear = new Date().getFullYear(); // Calculate year directly
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
-    setIsMounted(true); // Signal that the component has mounted on the client
+    setIsMounted(true); 
 
-    // Fetch admin status only on the client after mount
     const checkAdminStatus = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -38,7 +37,11 @@ export default function Footer() {
       }
     };
     checkAdminStatus();
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []);
+
+  if (!isMounted) {
+    return null; // Render nothing on the server or before hydration
+  }
 
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
@@ -69,7 +72,7 @@ export default function Footer() {
               <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-              {isMounted && isAdmin && (
+              {isAdmin && (
                 <li>
                   <Link href="/admin" className="flex items-center hover:text-primary transition-colors">
                     <LayoutDashboard size={16} className="mr-1.5" /> Admin Panel
