@@ -70,13 +70,18 @@ export async function middleware(request: NextRequest) {
       .from('users')
       .select('role')
       .eq('id', authUser.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle to handle "no row" gracefully
 
-    if (profileError || !userProfile) {
-      console.error(`Middleware: Error fetching profile for user ${authUser.id} or profile not found:`, profileError);
-      // This case might happen if the public.users entry is missing.
-      // For security, deny access.
-      return NextResponse.redirect(new URL('/?error=unauthorized&message=User profile not found or inaccessible.', request.url));
+    if (profileError) {
+      // This error is now for actual database issues or if multiple rows were found (PK should prevent this)
+      console.error(`Middleware: Database error fetching profile for user ${authUser.id}:`, profileError.message);
+      return NextResponse.redirect(new URL('/?error=unauthorized&message=Error accessing your user profile data.', request.url));
+    }
+    
+    if (!userProfile) {
+      // User is authenticated in auth.users but no corresponding profile in public.users
+      console.warn(`Middleware: No profile found in public.users for user ${authUser.id} (${authUser.email}). Admin access denied.`);
+      return NextResponse.redirect(new URL('/?error=unauthorized&message=User profile not found. Cannot verify admin status.', request.url));
     }
 
     if (userProfile.role !== 'admin') {
@@ -99,3 +104,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
+

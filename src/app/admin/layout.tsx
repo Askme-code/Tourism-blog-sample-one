@@ -51,10 +51,15 @@ export default async function AdminLayout({
     .from('users')
     .select('role, full_name, phone') // fetch full_name as well if it's primarily in public.users
     .eq('id', authUser.id)
-    .single();
+    .maybeSingle(); // Use maybeSingle to handle "no row" gracefully
 
-  if (profileError || !userProfile) {
-    console.error(`AdminLayout: Error fetching profile for user ${authUser.id} or profile not found:`, profileError);
+  if (profileError) {
+    console.error(`AdminLayout: Database error fetching profile for user ${authUser.id}:`, profileError.message);
+    return redirect("/?error=unauthorized&message=Error accessing your profile information. Cannot verify admin status.");
+  }
+
+  if (!userProfile) {
+    console.error(`AdminLayout: No profile found in public.users for user ${authUser.id} (${authUser.email}). Cannot verify admin status.`);
     return redirect("/?error=unauthorized&message=User profile not found. Cannot verify admin status.");
   }
 
@@ -163,3 +168,4 @@ export default async function AdminLayout({
     </div>
   );
 }
+
