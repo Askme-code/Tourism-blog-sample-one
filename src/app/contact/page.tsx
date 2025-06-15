@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react"; // Added useState, useEffect
 import { useFormStatus } from "react-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
@@ -52,6 +52,11 @@ function SubmitButton() {
 
 export default function ContactPage() {
   const [state, formAction] = useActionState(submitContactForm, null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <div className="bg-background text-foreground">
@@ -115,47 +120,62 @@ export default function ContactPage() {
             </Card>
 
             {/* Contact Information Card */}
-            <Card className="shadow-xl bg-muted/30">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl md:text-3xl">Contact Information</CardTitle>
-                <CardDescription>Reach out to us directly through these channels.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
-                    <MapPin className="h-6 w-6 text-primary" />
+            {isMounted && (
+              <Card className="shadow-xl bg-muted/30">
+                <CardHeader>
+                  <CardTitle className="font-headline text-2xl md:text-3xl">Contact Information</CardTitle>
+                  <CardDescription>Reach out to us directly through these channels.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
+                      <MapPin className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-foreground">Our Office</h4>
+                      <p className="text-foreground/80">123 Beach Road, Stone Town, Zanzibar</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
+                      <Mail className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-foreground">Email Us</h4>
+                      <a href="mailto:info@zanzibarfreetours.com" className="text-primary hover:underline">info@zanzibarfreetours.com</a>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
+                      <Phone className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-foreground">Call Us</h4>
+                      <a href="tel:+255777123456" className="text-primary hover:underline">+255 777 123 456</a>
+                    </div>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-lg text-foreground">Our Office</h4>
-                    <p className="text-foreground/80">123 Beach Road, Stone Town, Zanzibar</p>
+                      <h4 className="font-semibold text-lg text-foreground mb-2">Business Hours</h4>
+                      <p className="text-foreground/80">Monday - Friday: 9:00 AM - 5:00 PM</p>
+                      <p className="text-foreground/80">Saturday: 10:00 AM - 3:00 PM</p>
+                      <p className="text-foreground/80">Sunday: Closed</p>
                   </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
-                    <Mail className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-lg text-foreground">Email Us</h4>
-                    <a href="mailto:info@zanzibarfreetours.com" className="text-primary hover:underline">info@zanzibarfreetours.com</a>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 p-3 bg-primary/20 rounded-full">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-lg text-foreground">Call Us</h4>
-                    <a href="tel:+255777123456" className="text-primary hover:underline">+255 777 123 456</a>
-                  </div>
-                </div>
-                <div>
-                    <h4 className="font-semibold text-lg text-foreground mb-2">Business Hours</h4>
-                    <p className="text-foreground/80">Monday - Friday: 9:00 AM - 5:00 PM</p>
-                    <p className="text-foreground/80">Saturday: 10:00 AM - 3:00 PM</p>
-                    <p className="text-foreground/80">Sunday: Closed</p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+            {!isMounted && ( // Placeholder for SSR or before hydration
+              <Card className="shadow-xl bg-muted/30">
+                <CardHeader>
+                  <CardTitle className="font-headline text-2xl md:text-3xl">Contact Information</CardTitle>
+                  <CardDescription>Loading contact details...</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="h-10 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
@@ -177,3 +197,4 @@ export default function ContactPage() {
     </div>
   );
 }
+
