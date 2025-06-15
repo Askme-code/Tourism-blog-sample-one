@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,18 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { updateUserPasswordAction } from "@/lib/actions/auth"; // Assuming you'll create this
+import { updateUserPasswordAction } from "@/lib/actions/auth";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Phone, ShieldCheck, Edit3, Save } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useRouter, useSearchParams } from "next/navigation";
+
+// This tells Next.js to always render this page dynamically at request time
+export const dynamic = "force-dynamic";
 
 interface UserProfile extends SupabaseUser {
   user_metadata: {
     full_name?: string;
     avatar_url?: string;
     role?: string;
-    phone?: string; // Assuming phone might be in user_metadata too or needs separate update
+    phone?: string;
   };
 }
 
@@ -50,7 +54,6 @@ export default function ProfilePage() {
 
   const [passwordState, passwordFormAction] = useFormState(updateUserPasswordAction, null);
   
-  // State for editable fields
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -69,7 +72,7 @@ export default function ProfilePage() {
       const typedUser = data.user as UserProfile;
       setUser(typedUser);
       setFullName(typedUser.user_metadata.full_name || '');
-      setPhone(typedUser.user_metadata.phone || typedUser.phone || ''); // Check both metadata and root for phone
+      setPhone(typedUser.user_metadata.phone || typedUser.phone || '');
       setLoading(false);
     };
     fetchUser();
@@ -77,6 +80,11 @@ export default function ProfilePage() {
     const message = searchParams.get('message');
     if (message) {
       toast({ title: "Notification", description: message });
+      // Clean up URL
+      const currentPath = window.location.pathname;
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete('message');
+      router.replace(currentPath + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : ''), { scroll: false });
     }
   }, [supabase, toast, searchParams, router]);
 
@@ -87,8 +95,8 @@ export default function ProfilePage() {
         description: passwordState.message,
         variant: passwordState.error ? "destructive" : "default",
       });
-      if (!passwordState.error) {
-        // Clear form or redirect
+      if (!passwordState.error && document.getElementById('newPassword')) {
+        (document.getElementById('newPassword') as HTMLInputElement).value = '';
       }
     }
   }, [passwordState, toast]);
@@ -97,30 +105,40 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!user) return;
 
+    setLoading(true); // Indicate loading state
     const { data, error } = await supabase.auth.updateUser({
       data: { full_name: fullName, phone: phone } 
     });
+    setLoading(false);
 
     if (error) {
       toast({ variant: "destructive", title: "Update Failed", description: error.message });
     } else {
       toast({ title: "Success", description: "Profile updated successfully." });
-      if (data.user) setUser(data.user as UserProfile); // Update local user state
+      if (data.user) {
+        const updatedUser = data.user as UserProfile;
+        setUser(updatedUser);
+        // Update local state to reflect changes immediately
+        setFullName(updatedUser.user_metadata.full_name || '');
+        setPhone(updatedUser.user_metadata.phone || updatedUser.phone || '');
+      }
       setIsEditing(false);
     }
   };
 
 
-  if (loading) {
+  if (loading && !user) { // Show loading only if user data hasn't been fetched yet
     return <div className="container py-12 text-center">Loading profile...</div>;
   }
 
   if (!user) {
-    return <div className="container py-12 text-center">User not found. Please log in.</div>;
+     // This case should ideally be handled by the redirect in useEffect, 
+     // but acts as a fallback if the user somehow lands here without being redirected.
+    return <div className="container py-12 text-center">Please log in to view your profile.</div>;
   }
   
-  const initials = fullName
-    ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
+  const initials = (user.user_metadata.full_name || fullName)
+    ? (user.user_metadata.full_name || fullName).split(" ").map((n) => n[0]).join("").toUpperCase()
     : user.email?.[0].toUpperCase() ?? "U";
 
 
@@ -136,7 +154,7 @@ export default function ProfilePage() {
                 <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt={fullName} />
                 <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
               </Avatar>
-              <CardTitle className="text-2xl font-headline">{fullName}</CardTitle>
+              <CardTitle className="text-2xl font-headline">{fullName || user.user_metadata.full_name}</CardTitle>
               <CardDescription className="text-sm text-primary">{user.user_metadata.role || 'User'}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-3">
@@ -150,6 +168,7 @@ export default function ProfilePage() {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Your phone number"
                     className="mt-1"
+                    disabled={loading}
                   />
               ) : (
                 <div className="flex items-center">
@@ -160,7 +179,7 @@ export default function ProfilePage() {
             </CardContent>
              <CardFooter>
               {!isEditing && (
-                 <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full">
+                 <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full" disabled={loading}>
                     <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
                   </Button>
               )}
@@ -177,32 +196,35 @@ export default function ProfilePage() {
               <CardContent>
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullNameEdit">Full Name</Label>
                     <Input 
-                      id="fullName" 
+                      id="fullNameEdit" 
                       name="fullName" 
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)} 
                       required 
                       className="mt-1"
+                      disabled={loading}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phoneEdit">Phone Number</Label>
                     <Input 
-                      id="phone" 
+                      id="phoneEdit" 
                       name="phone" 
+                      type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)} 
                       placeholder="Your phone number"
                       className="mt-1"
+                      disabled={loading}
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit">
-                      <Save className="mr-2 h-4 w-4" /> Save Changes
+                    <Button type="submit" disabled={loading}>
+                      <Save className="mr-2 h-4 w-4" /> {loading ? "Saving..." : "Save Changes"}
                     </Button>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={loading}>Cancel</Button>
                   </div>
                 </form>
               </CardContent>
@@ -233,9 +255,9 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
           
-          {/* Placeholder for other settings like notifications, linked accounts etc. */}
         </div>
       </div>
     </div>
   );
 }
+
