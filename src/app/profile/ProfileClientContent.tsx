@@ -15,11 +15,13 @@ import { User as UserIcon, Mail, Phone, ShieldCheck, Edit3, Save, Loader2 } from
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useSearchParams, useRouter } from "next/navigation";
 
+// Defines the expected structure of user_metadata if it exists.
+// SupabaseUser['user_metadata'] is Record<string, any>, so it's always an object (possibly empty).
 interface UserProfile extends SupabaseUser {
   user_metadata: {
     full_name?: string;
     avatar_url?: string;
-    role?: string;
+    role?: string; // Note: This 'role' is illustrative; auth role comes from public.users
     phone?: string;
   };
 }
@@ -51,8 +53,8 @@ export default function ProfileClientContent() {
 
   const [passwordState, passwordFormAction] = useActionState(updateUserPasswordAction, null);
   
-  const [fullName, setFullName] = useState('');
-  const [phoneState, setPhoneState] = useState('');
+  const [fullName, setFullName] = useState(''); // For editable full name
+  const [phoneState, setPhoneState] = useState(''); // For editable phone
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -65,8 +67,11 @@ export default function ProfileClientContent() {
         router.push('/auth/login?message=Please log in to view your profile.');
         return;
       }
-      const typedUser = data.user as UserProfile;
+      // Cast to UserProfile. SupabaseUser user_metadata is Record<string, any>.
+      // UserProfile expects user_metadata to be an object (which it is, possibly empty).
+      const typedUser = data.user as UserProfile; 
       setUser(typedUser);
+      // Initialize editable fields from metadata, or fallback to empty string / user.phone
       setFullName(typedUser.user_metadata.full_name || '');
       setPhoneState(typedUser.user_metadata.phone || typedUser.phone || '');
       setInternalLoading(false);
@@ -76,20 +81,13 @@ export default function ProfileClientContent() {
     const message = searchParams.get('message');
     if (message) {
       toast({ title: "Notification", description: message });
-      // Clean up URL by removing the message param
       const currentPath = window.location.pathname;
       const newSearchParams = new URLSearchParams(searchParams.toString());
       newSearchParams.delete('message');
       router.replace(currentPath + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : ''), { scroll: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, toast, router]); // searchParams removed from here as it can cause infinite loops if not memoized by parent
-
-   useEffect(() => {
-    // Separate effect for searchParams if it's truly needed for re-triggering logic
-    // For now, we assume it's only for the initial message.
-  }, [searchParams]);
-
+  }, [supabase, toast, router]); // searchParams deliberately omitted to avoid re-runs if only it changes for toast
 
   useEffect(() => {
     if (passwordState?.message) {
@@ -110,7 +108,7 @@ export default function ProfileClientContent() {
 
     setInternalLoading(true);
     const { data, error } = await supabase.auth.updateUser({
-      data: { full_name: fullName, phone: phoneState }
+      data: { full_name: fullName, phone: phoneState } // These go into user_metadata
     });
     setInternalLoading(false);
 
@@ -120,7 +118,7 @@ export default function ProfileClientContent() {
       toast({ title: "Success", description: "Profile updated successfully." });
       if (data.user) {
         const updatedUser = data.user as UserProfile;
-        setUser(updatedUser); // Refresh local user state
+        setUser(updatedUser); 
         setFullName(updatedUser.user_metadata.full_name || '');
         setPhoneState(updatedUser.user_metadata.phone || updatedUser.phone || '');
       }
@@ -138,7 +136,6 @@ export default function ProfileClientContent() {
   }
 
   if (!user) {
-    // This state might be hit briefly before redirection
     return (
         <div className="flex flex-col items-center justify-center min-h-[300px]">
           <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
@@ -147,22 +144,33 @@ export default function ProfileClientContent() {
       );
   }
 
-  const initials = (user.user_metadata.full_name || fullName)
-    ? (user.user_metadata.full_name || fullName).split(" ").map((n) => n[0]).join("").toUpperCase()
-    : user.email?.[0].toUpperCase() ?? "U";
+  // Derive display values safely after user is confirmed non-null
+  const currentFullNameFromMetadata = user.user_metadata.full_name;
+  const nameForDisplay = fullName || currentFullNameFromMetadata || user.email || "User";
+
+  const nameSourceForInitials = currentFullNameFromMetadata || user.email;
+  const initials = nameSourceForInitials
+    ? nameSourceForInitials
+        .split(" ")
+        .filter(Boolean) // Remove empty strings if name has multiple spaces
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : "P"; // Default to 'P' for Profile if no name/email
 
   return (
     <div className="container py-8 md:py-12">
-      <h1 className="text-3xl md:text-4xl font-headline mb-8 text-center">Your Profile</h1>
+      {/* This H1 is now rendered by the parent page component */}
+      {/* <h1 className="text-3xl md:text-4xl font-headline mb-8 text-center">Your Profile</h1> */}
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
           <Card className="shadow-lg">
             <CardHeader className="items-center text-center">
               <Avatar className="h-24 w-24 mb-4 ring-2 ring-primary ring-offset-2">
-                <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt={fullName} />
+                <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt={nameForDisplay} />
                 <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
               </Avatar>
-              <CardTitle className="text-2xl font-headline">{fullName || user.user_metadata.full_name}</CardTitle>
+              <CardTitle className="text-2xl font-headline">{nameForDisplay}</CardTitle>
               <CardDescription className="text-sm text-primary">{user.user_metadata.role || 'User'}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-3">
@@ -209,7 +217,7 @@ export default function ProfileClientContent() {
                     <Input
                       id="profileFullNameEditForm"
                       name="fullName"
-                      value={fullName}
+                      value={fullName} // Bound to editable state
                       onChange={(e) => setFullName(e.target.value)}
                       required
                       className="mt-1"
@@ -222,7 +230,7 @@ export default function ProfileClientContent() {
                       id="profilePhoneEditForm"
                       name="phone"
                       type="tel"
-                      value={phoneState}
+                      value={phoneState} // Bound to editable state
                       onChange={(e) => setPhoneState(e.target.value)}
                       placeholder="Your phone number"
                       className="mt-1"
@@ -270,3 +278,4 @@ export default function ProfileClientContent() {
     </div>
   );
 }
+
