@@ -1,15 +1,38 @@
+
 "use client";
 
 import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
-import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Twitter, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+
+interface AppUser extends User {
+  user_metadata: {
+    role?: string;
+    [key: string]: any;
+  };
+}
 
 export default function Footer() {
-  const [dynamicYear, setDynamicYear] = useState<number | string>("..."); // Placeholder for the year
+  const [dynamicYear, setDynamicYear] = useState<number | string>("...");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setDynamicYear(new Date().getFullYear());
+
+    const checkAdminStatus = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const appUser = user as AppUser;
+        if (appUser.user_metadata?.role === 'admin') {
+          setIsAdmin(true);
+        }
+      }
+    };
+    checkAdminStatus();
   }, []);
 
   return (
@@ -41,6 +64,13 @@ export default function Footer() {
               <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
+              {isAdmin && (
+                <li>
+                  <Link href="/admin" className="flex items-center hover:text-primary transition-colors">
+                    <LayoutDashboard size={16} className="mr-1.5" /> Admin Panel
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
