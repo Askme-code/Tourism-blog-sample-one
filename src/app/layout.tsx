@@ -9,9 +9,9 @@ import Footer from '@/components/layout/Footer';
 export const metadata: Metadata = {
   title: 'Zanzibar Free Tours',
   description: 'Explore the beauty of Zanzibar with our free tours and safaris.',
-  icons: {
-    icon: '/favicon.ico', // Example, assuming favicon exists
-  }
+  // icons: {
+  //   icon: '/favicon.ico', // Example, assuming favicon exists
+  // }
 };
 
 export default function RootLayout({
