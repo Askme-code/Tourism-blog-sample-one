@@ -14,70 +14,74 @@ export default function Footer() {
 
   useEffect(() => {
     setIsMounted(true);
-    setDisplayYear(new Date().getFullYear());
-
-    const checkAdminStatus = async () => {
-      const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userProfile, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', authUser.id)
-          .maybeSingle();
-        
-        if (error) {
-          if (error.message === "JSON object requested, multiple (or no) rows returned") {
-            console.warn(`Footer: No profile/role found for user ${authUser.id} (reported as: ${error.message}). Assuming non-admin.`);
-          } else {
-            console.error("Footer: Error fetching user role:", error.message);
-          }
-          setIsAdmin(false);
-        } else if (!userProfile) {
-          console.warn(`Footer: No profile found in public.users for user ${authUser.id}. Assuming non-admin.`);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(userProfile.role === 'admin');
-        }
-      } else {
-        setIsAdmin(false);
-      }
-    };
-    checkAdminStatus();
   }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      setDisplayYear(new Date().getFullYear());
+
+      const checkAdminStatus = async () => {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          const { data: userProfile, error } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', authUser.id)
+            .maybeSingle();
+          
+          if (error) {
+            if (error.message.includes("multiple (or no) rows returned")) {
+              console.warn(`Footer: No profile/role found for user ${authUser.id} (reported as: ${error.message}). Assuming non-admin.`);
+            } else {
+              console.error("Footer: Error fetching user role:", error.message);
+            }
+            setIsAdmin(false);
+          } else if (!userProfile) {
+            console.warn(`Footer: No profile found in public.users for user ${authUser.id}. Assuming non-admin.`);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(userProfile.role === 'admin');
+          }
+        } else {
+          setIsAdmin(false);
+        }
+      };
+      checkAdminStatus();
+    }
+  }, [isMounted]);
 
   if (!isMounted) {
     // Skeleton rendered on the server and initial client render
     return (
         <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
             <div className="container max-w-screen-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
-                        <div className="h-8 w-48 bg-muted rounded"></div>
-                        <div className="mt-2 h-4 w-full bg-muted rounded"></div>
+                        <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
+                        <div className="mt-2 h-4 w-full bg-muted rounded animate-pulse"></div>
                         <div className="mt-4 flex space-x-3">
-                            <div className="h-5 w-5 bg-muted rounded-full"></div>
-                            <div className="h-5 w-5 bg-muted rounded-full"></div>
-                            <div className="h-5 w-5 bg-muted rounded-full"></div>
+                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
+                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
+                            <div className="h-5 w-5 bg-muted rounded-full animate-pulse"></div>
                         </div>
                     </div>
                     <div>
-                        <div className="h-6 w-24 bg-muted rounded mb-3"></div>
+                        <div className="h-6 w-24 bg-muted rounded mb-3 animate-pulse"></div>
                         <ul className="space-y-2 text-sm">
-                            {[...Array(3)].map((_, i) => <li key={i} className="h-4 w-3/4 bg-muted rounded"></li>)}
+                            {[...Array(4)].map((_, i) => <li key={`skel-link-${i}`} className="h-4 w-3/4 bg-muted rounded animate-pulse"></li>)}
                         </ul>
                     </div>
                     <div>
-                        <div className="h-6 w-32 bg-muted rounded mb-3"></div>
+                        <div className="h-6 w-32 bg-muted rounded mb-3 animate-pulse"></div>
                          <div className="space-y-1 text-sm">
-                            <div className="h-4 w-full bg-muted rounded"></div>
-                            <div className="h-4 w-5/6 bg-muted rounded"></div>
-                            <div className="h-4 w-4/5 bg-muted rounded"></div>
+                            <div className="h-4 w-full bg-muted rounded animate-pulse"></div>
+                            <div className="h-4 w-5/6 bg-muted rounded animate-pulse"></div>
+                            <div className="h-4 w-4/5 bg-muted rounded animate-pulse"></div>
                         </div>
                     </div>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-                    {/* Consistent <p> tag for copyright placeholder */}
                     <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
                 </div>
             </div>
@@ -138,7 +142,6 @@ export default function Footer() {
           {displayYear ? (
             <p>&copy; {displayYear} Zanzibar Free Tours. All rights reserved.</p>
           ) : (
-            // Fallback placeholder matching the skeleton's copyright line structure
             <p className="h-4 w-1/3 bg-muted rounded mx-auto animate-pulse">&nbsp;</p>
           )}
         </div>
