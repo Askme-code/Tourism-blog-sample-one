@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -17,34 +16,29 @@ interface AppUser extends User {
 
 export default function Footer() {
   const [isMounted, setIsMounted] = useState(false);
-  const [dynamicYear, setDynamicYear] = useState<number | string>("...");
   const [isAdmin, setIsAdmin] = useState(false);
+  const currentYear = new Date().getFullYear(); // Calculate year directly
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    setIsMounted(true); // Signal that the component has mounted on the client
 
-  useEffect(() => {
-    if (isMounted) {
-      setDynamicYear(new Date().getFullYear());
-
-      const checkAdminStatus = async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const appUser = user as AppUser;
-          if (appUser.user_metadata?.role === 'admin') {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
+    // Fetch admin status only on the client after mount
+    const checkAdminStatus = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const appUser = user as AppUser;
+        if (appUser.user_metadata?.role === 'admin') {
+          setIsAdmin(true);
         } else {
           setIsAdmin(false);
         }
-      };
-      checkAdminStatus();
-    }
-  }, [isMounted]);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, []); // Empty dependency array ensures this runs once on mount
 
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
@@ -95,7 +89,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-          <p>&copy; {isMounted ? dynamicYear : "..."} Zanzibar Free Tours. All rights reserved.</p>
+          <p>&copy; {currentYear} Zanzibar Free Tours. All rights reserved.</p>
         </div>
       </div>
     </footer>
