@@ -4,7 +4,6 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import Navbar from '@/components/layout/Navbar';
-import { Suspense } from 'react';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
@@ -36,9 +35,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex flex-col min-h-screen">
-            <Suspense fallback={<div>Loading navigation...</div>}>
-              <Navbar />
-            </Suspense>
+            <Navbar />
             <main className="flex-grow">
               {children}
             </main>
