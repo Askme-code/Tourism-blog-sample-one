@@ -1,7 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { updateUserPasswordAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,7 @@ function SubmitButton() {
 }
 
 function ResetPasswordForm() {
-  const [state, formAction] = useFormState(updateUserPasswordAction, null);
+  const [state, formAction] = useActionState(updateUserPasswordAction, null);
   const searchParams = useSearchParams();
   const error = searchParams.get('error'); // Supabase redirects with error query param on failure
 

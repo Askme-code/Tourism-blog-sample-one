@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { submitBookingAction } from "@/lib/actions/booking";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ function SubmitButton() {
 
 export default function BookingForm({ tourId }: BookingFormProps) {
   const initialState = { message: null, errors: null, error: false };
-  const [state, formAction] = useFormState(submitBookingAction, initialState);
+  const [state, formAction] = useActionState(submitBookingAction, initialState);
   const { toast } = useToast();
   const pathname = usePathname();
 
@@ -112,4 +113,3 @@ export default function BookingForm({ tourId }: BookingFormProps) {
     </form>
   );
 }
-

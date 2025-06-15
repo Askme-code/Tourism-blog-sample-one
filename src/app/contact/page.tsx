@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import Image from "next/image";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 
@@ -49,7 +51,7 @@ function SubmitButton() {
 
 
 export default function ContactPage() {
-  const [state, formAction] = useFormState(submitContactForm, null);
+  const [state, formAction] = useActionState(submitContactForm, null);
 
   return (
     <div className="bg-background text-foreground">
@@ -59,7 +61,7 @@ export default function ContactPage() {
           <Image 
             src="https://placehold.co/1600x600.png?text=Zanzibar+Contact" 
             alt="Zanzibar Contact Background" 
-            layout="fill" 
+            fill
             objectFit="cover"
             data-ai-hint="tropical island contact"
           />

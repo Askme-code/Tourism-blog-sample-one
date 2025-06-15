@@ -1,7 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { sendPasswordResetEmailAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +23,7 @@ function SubmitButton() {
 }
 
 export default function ForgotPasswordPage() {
-  const [state, formAction] = useFormState(sendPasswordResetEmailAction, null);
+  const [state, formAction] = useActionState(sendPasswordResetEmailAction, null);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">

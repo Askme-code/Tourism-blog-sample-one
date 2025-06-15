@@ -2,7 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
 import { signInAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 function SubmitButton() {
@@ -27,7 +27,7 @@ export default function LoginForm() {
   const redirectTo = searchParams.get("redirect_to");
   const message = searchParams.get("message");
   const errorParam = searchParams.get("error");
-  const [state, formAction] = useFormState(signInAction, null);
+  const [state, formAction] = useActionState(signInAction, null);
   const { toast } = useToast();
 
   useEffect(() => {
