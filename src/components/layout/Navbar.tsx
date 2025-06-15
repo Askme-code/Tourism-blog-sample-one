@@ -5,18 +5,16 @@ import { ModeToggle } from '@/components/layout/ModeToggle';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Menu as MenuIcon, User as UserIconFallback } from 'lucide-react'; // Renamed User to UserIconFallback
+import { Search, Menu as MenuIcon, User as UserIconFallback } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { createClient as createSupabaseServerClient} from '@/lib/supabase/server'; 
-import { UserNav } from './UserNav';
+import { createClient as createSupabaseServerClient} from '@/lib/supabase/server';
 import { Suspense } from 'react';
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
-import { createClient as createSupabaseClient } from '@/lib/supabase/client'; 
-import * as React from 'react'; // Import React
+import UserNavWithRoleFetcher from './UserNavWithRoleFetcher'; // Import the new client component
 
 // This AuthStatus component will run on the server to get the initial auth user
 async function AuthStatus() {
-  const supabase = createSupabaseServerClient(); 
+  const supabase = createSupabaseServerClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
   if (authUser) {
@@ -34,46 +32,6 @@ async function AuthStatus() {
     </div>
   );
 }
-
-// New client component to fetch public.users.role for UserNav in the main navbar
-function UserNavWithRoleFetcher({ authUser }: { authUser: SupabaseAuthUser }) {
-  'use client';
-  const [role, setRole] = React.useState<string | undefined>(undefined);
-  const [isLoadingRole, setIsLoadingRole] = React.useState(true);
-
-  React.useEffect(() => {
-    async function fetchRole() {
-      if (authUser) {
-        const supabase = createSupabaseClient();
-        const { data: userProfile, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', authUser.id)
-          .single();
-        if (!error && userProfile) {
-          setRole(userProfile.role);
-        } else if (error) {
-          console.error("Error fetching user role for UserNav:", error.message);
-        }
-        setIsLoadingRole(false);
-      } else {
-        setIsLoadingRole(false);
-      }
-    }
-    fetchRole();
-  }, [authUser]);
-
-  if (isLoadingRole) {
-    // Basic fallback while role is loading
-    return <Button variant="ghost" size="icon" className="rounded-full"><UserIconFallback className="h-5 w-5"/></Button>;
-  }
-  
-  // Type assertion for user_metadata if needed by UserNav structure
-  const typedUser = authUser as SupabaseAuthUser & { user_metadata: { full_name?: string, avatar_url?: string }};
-
-  return <UserNav user={typedUser} passedRole={role} />;
-}
-
 
 export default function Navbar() {
   return (
@@ -108,7 +66,7 @@ export default function Navbar() {
             />
             <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </div>
-          
+
           <LanguageSwitcher />
           <ModeToggle />
           <Suspense fallback={<Button variant="ghost" size="icon" className="rounded-full"><UserIconFallback className="h-5 w-5"/></Button>}>
