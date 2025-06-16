@@ -112,7 +112,7 @@ export async function signInAction(prevState: any, formData: FormData) {
   
   const { email, password } = result.data;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { error, data: signInData } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -125,7 +125,22 @@ export async function signInAction(prevState: any, formData: FormData) {
     };
   }
 
-  return redirect(redirectTo);
+  if (signInData?.user) {
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', signInData.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Error fetching user role after sign in:", profileError.message);
+      // Don't block login, proceed with default redirect if role check fails
+    } else if (userProfile?.role === 'admin') {
+      return redirect('/admin'); // Redirect to admin panel if user is admin
+    }
+  }
+
+  return redirect(redirectTo); // Default redirect for non-admins or if role check fails
 }
 
 export async function signOutAction() {
