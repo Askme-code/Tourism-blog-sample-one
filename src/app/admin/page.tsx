@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Briefcase, Users, MessageSquare, BarChart3, DollarSign, Edit } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
