@@ -32,17 +32,16 @@ async function getTourDetails(id: string) {
       )
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle(); 
 
   if (error) {
     console.error(`Error fetching tour details for ID ${id}:`, error.message || JSON.stringify(error));
-    return null;
+    return null; 
   }
+  
   if (!tour) {
-    // This case implies .single() found no rows, and 'error' was null.
-    // This is an expected scenario for a non-existent tour ID, leading to a 404.
     console.warn(`Tour with ID ${id} not found. This will result in a 404 page.`);
-    return null;
+    return null; 
   }
   return tour;
 }
