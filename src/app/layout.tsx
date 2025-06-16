@@ -28,6 +28,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Belleza&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
         <meta name="google-adsense-account" content="ca-pub-5805028999017949" />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5805028999017949"
+          crossOrigin="anonymous"
+          strategy="afterInteractive" // Keep strategy, Next.js will optimize placement, but it will be in head.
+        />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
@@ -45,12 +51,6 @@ export default function RootLayout({
           </div>
           <Toaster />
         </ThemeProvider>
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5805028999017949"
-          crossOrigin="anonymous"
-          strategy="afterInteractive" // Loads after the page becomes interactive
-        />
       </body>
     </html>
   );
