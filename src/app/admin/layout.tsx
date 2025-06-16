@@ -10,6 +10,8 @@ import { UserNav } from "@/components/layout/UserNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
+import QueryParamToast from '@/components/utility/QueryParamToast';
+import { Suspense } from 'react';
 
 const adminNavItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
@@ -22,14 +24,11 @@ const adminNavItems = [
 ];
 
 interface UserWithPublicRole extends SupabaseAuthUser {
-  // For data primarily from auth.users (like email, user_metadata for avatar/name)
   user_metadata: { 
     full_name?: string; 
     avatar_url?: string;
-    // role from user_metadata is now secondary, public.users.role is primary
     role?: string; 
   };
-  // Explicitly add the role fetched from public.users
   public_role?: string; 
 }
 
@@ -46,12 +45,11 @@ export default async function AdminLayout({
     return redirect("/auth/login?message=Please log in to access the admin panel.&redirect_to=/admin");
   }
 
-  // Fetch role from public.users table
   const { data: userProfile, error: profileError } = await supabase
     .from('users')
-    .select('role, full_name, phone') // fetch full_name as well if it's primarily in public.users
+    .select('role, full_name, phone') 
     .eq('id', authUser.id)
-    .maybeSingle(); // Use maybeSingle to handle "no row" gracefully
+    .maybeSingle(); 
 
   if (profileError) {
     console.error(`AdminLayout: Database error fetching profile for user ${authUser.id}:`, profileError.message);
@@ -68,16 +66,13 @@ export default async function AdminLayout({
      return redirect("/?error=unauthorized&message=You are not authorized to access this page.");
   }
 
-  // Construct the user object for UserNav, prioritizing data from public.users if available
-  // and falling back to authUser.user_metadata for display purposes like full_name, avatar_url
   const displayUser: UserWithPublicRole = {
     ...authUser,
     user_metadata: {
-      ...authUser.user_metadata, // Keep existing user_metadata
+      ...authUser.user_metadata, 
       full_name: userProfile.full_name || authUser.user_metadata?.full_name || authUser.email || '',
-      // avatar_url could still come from authUser.user_metadata if not in public.users
     },
-    public_role: userProfile.role, // This is the authoritative role
+    public_role: userProfile.role, 
   };
 
 
@@ -162,10 +157,12 @@ export default async function AdminLayout({
         </header>
 
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
+           <Suspense fallback={null}>
+            <QueryParamToast />
+          </Suspense>
           {children}
         </main>
       </div>
     </div>
   );
 }
-
