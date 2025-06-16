@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Home, Briefcase, Edit, MessageSquare, Users, Settings, LogOut, PanelLeft } from "lucide-react";
+import { Home, Briefcase, Edit, MessageSquare, Users, Settings, LogOut, PanelLeft, CalendarRange } from "lucide-react";
 import Logo from "@/components/icons/Logo";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/layout/ModeToggle";
@@ -16,7 +16,7 @@ import { Suspense } from 'react';
 const adminNavItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/tours", label: "Manage Tours", icon: Briefcase },
-  { href: "/admin/bookings", label: "Manage Bookings", icon: Edit },
+  { href: "/admin/bookings", label: "Manage Bookings", icon: CalendarRange }, // Updated Icon
   { href: "/admin/news", label: "Manage News", icon: Edit },
   { href: "/admin/reviews", label: "Moderate Reviews", icon: MessageSquare },
   { href: "/admin/users", label: "Manage Users", icon: Users },
