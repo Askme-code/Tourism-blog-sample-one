@@ -7,8 +7,8 @@ import { Facebook, Instagram, Twitter, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-// This component now assumes it's only rendered client-side after necessary state is ready
-const ActualFooterContent = ({ isAdmin, displayYear }: { isAdmin: boolean; displayYear: number | null }) => (
+// This component renders the actual footer content once client-side state is ready
+const ActualFooterContent = ({ currentIsAdmin, currentDisplayYear }: { currentIsAdmin: boolean; currentDisplayYear: number | null }) => (
   <>
     <div className="container max-w-screen-2xl">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -37,7 +37,7 @@ const ActualFooterContent = ({ isAdmin, displayYear }: { isAdmin: boolean; displ
             <li><Link href="/tours" className="hover:text-primary transition-colors">Our Tours</Link></li>
             <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
             <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ (Coming Soon)</Link></li>
-            {isAdmin && (
+            {currentIsAdmin && (
               <li>
                 <Link href="/admin" className="flex items-center hover:text-primary transition-colors">
                   <LayoutDashboard size={16} className="mr-1.5" /> Admin Panel
@@ -57,10 +57,9 @@ const ActualFooterContent = ({ isAdmin, displayYear }: { isAdmin: boolean; displ
         </div>
       </div>
       <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-        {displayYear ? (
-          <p>&copy; {displayYear} Zanzibar Free Tours. All rights reserved.</p>
+        {currentDisplayYear ? (
+          <p>&copy; {currentDisplayYear} Zanzibar Free Tours. All rights reserved.</p>
         ) : (
-          // This placeholder is for when isMounted is true, but displayYear hasn't been set yet in its useEffect.
           <p className="h-4 w-1/3 bg-muted rounded mx-auto">&nbsp;</p> 
         )}
       </div>
@@ -79,6 +78,7 @@ export default function Footer() {
   }, []);
 
   useEffect(() => {
+    // This effect runs only on the client, after isMounted is true
     if (isMounted) {
       setDisplayYear(new Date().getFullYear());
 
@@ -114,37 +114,33 @@ export default function Footer() {
   }, [isMounted]);
 
   if (!isMounted) {
-    // Server-side and initial client-side render (explicit skeleton)
-    // This markup MUST be static and identical on server and initial client.
+    // Skeleton rendered on the server and initial client render BEFORE isMounted is true
     return (
         <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
             <div className="container max-w-screen-2xl">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Column 1: Logo & Social Skeleton */}
                     <div>
-                        <div className="flex items-center gap-2 mb-2"> {/* Mimics Logo component structure */}
-                            <div className="h-6 w-6 bg-primary/20 rounded-full"></div> {/* Placeholder for Palmtree icon */}
-                            <div className="h-5 w-40 bg-muted rounded"></div> {/* Placeholder for "Zanzibar Free Tours" text */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="h-6 w-6 bg-primary/20 rounded-full"></div>
+                            <div className="h-5 w-40 bg-muted rounded"></div>
                         </div>
-                        <p className="mt-2 text-sm h-4 w-3/4 bg-muted rounded"></p> {/* Placeholder for description */}
-                        <div className="mt-4 flex space-x-3"> {/* Placeholder for social icons */}
+                        <p className="mt-2 text-sm h-4 w-3/4 bg-muted rounded"></p>
+                        <div className="mt-4 flex space-x-3">
                             <div className="h-5 w-5 bg-muted rounded-full"></div>
                             <div className="h-5 w-5 bg-muted rounded-full"></div>
                             <div className="h-5 w-5 bg-muted rounded-full"></div>
                         </div>
                     </div>
-                    {/* Column 2: Quick Links Skeleton */}
                     <div>
-                        <h3 className="font-headline text-lg font-semibold text-transparent bg-muted rounded h-5 w-24 mb-3"></h3> {/* Placeholder for "Quick Links" heading */}
+                        <h3 className="font-headline text-lg font-semibold text-transparent bg-muted rounded h-5 w-24 mb-3"></h3>
                         <ul className="space-y-2 text-sm">
-                            {[...Array(4)].map((_, i) => ( // Always render 4 placeholders for links initially
-                                <li key={i} className="h-4 w-2/3 bg-muted rounded"></li>
+                            {[...Array(4)].map((_, i) => (
+                                <li key={`skel-link-${i}`} className="h-4 w-2/3 bg-muted rounded"></li>
                             ))}
                         </ul>
                     </div>
-                    {/* Column 3: Contact Us Skeleton */}
                     <div>
-                        <h3 className="font-headline text-lg font-semibold text-transparent bg-muted rounded h-5 w-28 mb-3"></h3> {/* Placeholder for "Contact Us" heading */}
+                        <h3 className="font-headline text-lg font-semibold text-transparent bg-muted rounded h-5 w-28 mb-3"></h3>
                         <address className="not-italic text-sm space-y-1">
                             <p className="h-4 w-3/4 bg-muted rounded"></p>
                             <p className="h-4 w-full bg-muted rounded"></p>
@@ -153,18 +149,17 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="mt-8 pt-8 border-t border-border/60 text-center text-xs">
-                    <p className="h-4 w-1/3 bg-muted rounded mx-auto">&nbsp;</p> {/* Placeholder for copyright */}
+                    <p className="h-4 w-1/3 bg-muted rounded mx-auto">&nbsp;</p>
                 </div>
             </div>
         </footer>
     );
   }
 
-  // Client-side render after mount and state updates
+  // Actual content rendered on the client AFTER isMounted is true and other states are determined
   return (
     <footer className="bg-muted/50 border-t border-border/40 text-muted-foreground py-8 md:py-12">
-      <ActualFooterContent isAdmin={isAdmin} displayYear={displayYear} />
+      <ActualFooterContent currentIsAdmin={isAdmin} currentDisplayYear={displayYear} />
     </footer>
   );
 }
-
