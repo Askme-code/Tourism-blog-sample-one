@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Briefcase, Users, MessageSquare, BarChart3, DollarSign, Edit } from "lucide-react";
+import { Briefcase, Users, MessageSquare, BarChart3, Edit } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,13 @@ export default async function AdminDashboardPage() {
     { title: "Total Users", value: data.totalUsers, icon: Users, color: "text-blue-500", description: "Registered users", href: "/admin/users" },
   ];
 
+  const mockActivities = [
+    { type: 'booking', text: 'New Booking for "Sunset Dhow Cruise"', href: '/admin/bookings', icon: Briefcase, iconColor: 'text-primary' },
+    { type: 'review', text: 'New Review for "Stone Town Walking Tour"', href: '/admin/reviews', icon: MessageSquare, iconColor: 'text-accent' },
+    { type: 'booking', text: 'New Booking for "Spice Farm Adventure"', href: '/admin/bookings', icon: Briefcase, iconColor: 'text-primary' },
+  ];
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -92,21 +99,20 @@ export default async function AdminDashboardPage() {
             <CardDescription>Overview of recent bookings and reviews.</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Placeholder for recent activity feed */}
             <ul className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <li key={i} className="flex items-center p-3 bg-muted/50 rounded-md">
-                  <div className="p-2 bg-primary/20 rounded-full mr-3">
-                    {i % 2 === 0 ? <Briefcase className="h-5 w-5 text-primary" /> : <MessageSquare className="h-5 w-5 text-accent" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {i % 2 === 0 ? `New Booking for "Sunset Dhow Cruise"` : `New Review for "Stone Town Walking Tour"`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(Date.now() - i * 3600000).toLocaleString()} {/* Mock recent times */}
-                    </p>
-                  </div>
+              {mockActivities.map((activity, i) => (
+                <li key={i} className="p-3 bg-muted/50 rounded-md hover:bg-muted/75 transition-colors">
+                  <Link href={activity.href} className="flex items-center">
+                    <div className={`p-2 bg-primary/20 rounded-full mr-3 ${activity.iconColor === 'text-primary' ? 'bg-primary/20' : 'bg-accent/20'}`}>
+                      <activity.icon className={`h-5 w-5 ${activity.iconColor}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium group-hover:text-primary">{activity.text}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(Date.now() - i * 3600000 * (i+1)).toLocaleString()} {/* Mock recent times */}
+                      </p>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
