@@ -5,7 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import Script from 'next/script'; // Import Script component
+// import Script from 'next/script'; // No longer using next/script for AdSense
 
 export const metadata: Metadata = {
   title: 'Zanzibar Free Tours',
@@ -28,12 +28,8 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Belleza&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
         <meta name="google-adsense-account" content="ca-pub-5805028999017949" />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5805028999017949"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive" 
-        />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5805028999017949"
+     crossOrigin="anonymous"></script>
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
