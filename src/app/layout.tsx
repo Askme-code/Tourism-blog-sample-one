@@ -32,7 +32,7 @@ export default function RootLayout({
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5805028999017949"
           crossOrigin="anonymous"
-          strategy="afterInteractive" // Keep strategy, Next.js will optimize placement, but it will be in head.
+          strategy="beforeInteractive" 
         />
       </head>
       <body className="font-body antialiased">
